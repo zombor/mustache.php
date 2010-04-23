@@ -21,6 +21,8 @@ class Mustache {
 	protected $throwSectionExceptions  = true;
 	protected $throwPartialExceptions  = false;
 	protected $throwVariableExceptions = false;
+	
+	protected $enableElse = true;
 
 	// Override charset passed to htmlentities() and htmlspecialchars(). Defaults to UTF-8.
 	protected $charset = 'UTF-8';
@@ -120,7 +122,11 @@ class Mustache {
 
 		$otag  = $this->prepareRegEx($this->otag);
 		$ctag  = $this->prepareRegEx($this->ctag);
-		$regex = '/' . $otag . '\\#(.+?)' . $ctag . '\\s*([\\s\\S]+?)' . $otag . '\\/\\1' . $ctag . '\\s*/m';
+		$regex = '/' . $otag . '\\#(.+?)' . $ctag . '\\s*([\\s\\S]+?)';
+		if ($this->enableElse) {
+			$regex .= '(?:\\s*' . $otag . '\:\\1' . $ctag . '\\s*([\\s\\S]+?)\\s*)?';
+		}
+		$regex .= $otag . '\\/\\1' . $ctag . '\\s*/m';
 
 		$matches = array();
 		while (preg_match($regex, $template, $matches, PREG_OFFSET_CAPTURE)) {
@@ -128,15 +134,18 @@ class Mustache {
 			$offset   = $matches[0][1];
 			$tag_name = trim($matches[1][0]);
 			$content  = $matches[2][0];
+			$else     = $matches[3][0];
 
 			$replace = '';
 			$val = $this->getVariable($tag_name, $context);
-			if (is_array($val)) {
+			if (is_array($val) && !empty($val)) {
 				foreach ($val as $local_context) {
 					$replace .= $this->_render($content, $this->getContext($context, $local_context));
 				}
 			} else if ($val) {
 				$replace .= $content;
+			} else if ($else) {
+				$replace .= $else;
 			}
 
 			$template = substr_replace($template, $replace, $offset, strlen($section));
@@ -340,7 +349,7 @@ class Mustache {
 				} else if (method_exists($view, $tag_name)) {
 					return $view->$tag_name();
 				}
-			} else if (isset($view[$tag_name])) {
+			} else if (is_array($view) && isset($view[$tag_name])) {
 				return $view[$tag_name];
 			}
 		}
