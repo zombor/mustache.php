@@ -151,6 +151,8 @@ class Mustache {
 				case '^':
 					if (empty($val)) {
 						$replace .= $content;
+					} else if ($else_section !== false) {
+						$replace .= $else_section;
 					}
 					break;
 
