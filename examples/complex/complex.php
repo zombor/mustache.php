@@ -1,6 +1,8 @@
 <?php
 
 class Complex extends Mustache {
+	protected $templateBase = __DIR__;
+
 	public $header = 'Colors';
 
 	public $item = array(
