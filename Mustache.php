@@ -27,14 +27,17 @@ class Mustache {
 
 	protected $tagRegEx;
 
-	protected $template = '';
-	protected $context  = array();
-	protected $partials = array();
+	protected $template  = null;
+	protected $context   = array();
+	protected $partials  = array();
 
 	/**
 	 * templateBase directory.
 	 *
-	 * If none is specified, this will default to `dirname(__FILE__)`.
+	 * This must be specified in extending classes for the template autoloader to work. I'd suggest
+	 * something like:
+	 *
+	 *     protected $templateBase = __DIR__;
 	 *
 	 * @var string
 	 * @access protected
@@ -69,15 +72,14 @@ class Mustache {
 		if ($view !== null)     $this->context = array($view);
 
 		// default template base is the current directory.
-		if (!isset($this->templateBase)) {
-			$this->setTemplateBase(dirname(__FILE__));
+		if (isset($this->templateBase)) {
+			$this->setTemplateBase($this->templateBase);
 		}
 
 		// default template name is the underscorified class name.
 		if (!isset($this->templateName)) {
-			$this->templateName = strtolower(preg_replace('#(?<!^)([A-Z]+)#', '_\1', get_class($this)));
+			$this->templateName = strtolower(preg_replace('#(?<=[a-z0-9])([A-Z])#', '_\1', get_class($this)));
 		}
-
 	}
 
 	/**
