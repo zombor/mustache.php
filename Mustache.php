@@ -26,7 +26,7 @@ class Mustache {
 
 	// Override charset passed to htmlentities() and htmlspecialchars(). Defaults to UTF-8.
 	protected $charset = 'UTF-8';
-	
+
 	protected $tagRegEx;
 
 	protected $template = '';
@@ -158,12 +158,16 @@ class Mustache {
 
 				// regular section
 				case '#':
-					if (is_array($val) && !empty($val)) {
+					if ($this->varIsIterable($val) && !empty($val)) {
 						foreach ($val as $local_context) {
 							$replace .= $this->_render($content, $this->getContext($context, $local_context));
 						}
 					} else if ($val) {
-						$replace .= $content;
+						if (is_array($val) || is_object($val)) {
+							$replace .= $this->_render($content, $this->getContext($context, $val));
+						} else {
+							$replace .= $content;
+						}
 					} else if ($else_section !== false) {
 						$replace .= $else_section;
 					}
@@ -403,6 +407,17 @@ class Mustache {
 		} else {
 			return '';
 		}
+	}
+
+	/**
+	 * Check whether the given $var should be iterated (i.e. in a section context).
+	 *
+	 * @access protected
+	 * @param mixed $var
+	 * @return bool
+	 */
+	protected function varIsIterable($var) {
+		return is_object($var) || (is_array($var) && !array_diff_key($var, array_keys(array_keys($var))));
 	}
 
 	/**
