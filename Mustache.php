@@ -27,9 +27,9 @@ class Mustache {
 
 	protected $tagRegEx;
 
-	protected $template  = null;
-	protected $context   = array();
-	protected $partials  = array();
+	protected $template = null;
+	protected $context  = array();
+	protected $partials = array();
 
 	/**
 	 * templateBase directory.
@@ -53,6 +53,16 @@ class Mustache {
 	 * @access protected
 	 */
 	protected $templateName;
+
+	/**
+	 * File extension used to generate automatic template filenames.
+	 *
+	 * (default value: 'mustache')
+	 *
+	 * @var string
+	 * @access protected
+	 */
+	protected $templateExtension = 'mustache';
 
 	/**
 	 * Mustache class constructor.
@@ -117,7 +127,7 @@ class Mustache {
 	 */
 	public function loadTemplate($name) {
 		if (strpos($name, '.') === false) {
-			$name .= '.mustache';
+			$name .= '.' . $this->templateExtension;
 		}
 
 		$filename = $this->templateBase . $name;
@@ -475,7 +485,7 @@ class Mustache {
 		}
 
 		// If no partial is explictly set, search for an appropriately named partial template file.
-		$filename = $this->templateBase . $tag_name . '.mustache';
+		$filename = $this->templateBase . $tag_name . '.' . $this->templateExtension;
 		if (file_exists($filename)) {
 			$this->partials[$tag_name] = file_get_contents($filename);
 			return $this->partials[$tag_name];
