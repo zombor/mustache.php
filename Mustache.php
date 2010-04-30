@@ -73,12 +73,28 @@ class Mustache {
 		if ($partials !== null) $this->partials = $partials;
 
 		if ($view) {
+			if ($this->varIsIterable($view)) {
+				return $this->_renderIterable($template, $view);
+			}
 			$this->context = array($view);
 		} else if (empty($this->context)) {
 			$this->context = array($this);
+		} else {
+//			if (isset($this->context[0]) && is_array($this->context[0]) && $this->varIsIterable($this->context[0])) {
+//				return $this->_renderIterable($template, $this->context[0]);
+//			}
 		}
 
 		return $this->_render($template, $this->context);
+	}
+
+	public function _renderIterable($template, $contexts) {
+		$ret = array();
+		foreach ($contexts as $context) {
+			$local = array($context);
+			$ret[] = $this->_render($template, $local);
+		}
+		return implode("\n", $ret);
 	}
 
 	/**

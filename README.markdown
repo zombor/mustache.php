@@ -85,6 +85,8 @@ Known Issues
    Need a clean way to do this.
  * Sections don't respect delimiter changes -- `delimiters` example currently fails with an
    "unclosed section" exception.
+ * Implicit contexts only work when data is passed to the render() method. They don't work when data
+   is set via the constructor.
  * Test coverage is incomplete.
 
 
