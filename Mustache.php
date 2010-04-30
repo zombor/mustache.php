@@ -25,11 +25,31 @@ class Mustache {
 	// Override charset passed to htmlentities() and htmlspecialchars(). Defaults to UTF-8.
 	protected $charset = 'UTF-8';
 
+	const PRAGMA_DOT_NOTATION = 'DOT-NOTATION';
+
+	/**
+	 * The {{%UNESCAPED}} pragma swaps the meaning of the {{normal}} and {{{unescaped}}}
+	 * Mustache tags. That is, once this pragma is activated the {{normal}} tag will not be
+	 * escaped while the {{{unescaped}}} tag will be escaped.
+	 *
+	 * Pragmas apply only to the current template. Partials, even those included after the
+	 * {{%UNESCAPED}} call, will need their own pragma declaration.
+	 *
+	 * his may be useful in non-HTML Mustache situations.
+	 */
+	const PRAGMA_UNESCAPED    = 'UNESCAPED';
+
 	protected $tagRegEx;
 
 	protected $template = null;
 	protected $context  = array();
 	protected $partials = array();
+	protected $pragmas  = array();
+
+	protected $pragmasImplemented = array(
+		self::PRAGMA_DOT_NOTATION,
+		self::PRAGMA_UNESCAPED
+	);
 
 	/**
 	 * templateBase directory.
@@ -199,6 +219,7 @@ class Mustache {
 	 * @return string Rendered Mustache template.
 	 */
 	protected function _render($template, &$context) {
+		$template = $this->renderPragmas($template, $context);
 		$template = $this->renderSection($template, $context);
 		return $this->renderTags($template, $context);
 	}
@@ -242,11 +263,13 @@ class Mustache {
 				case '#':
 					if ($this->varIsIterable($val)) {
 						foreach ($val as $local_context) {
-							$replace .= $this->_render($content, $this->getContext($context, $local_context));
+							$c = $this->getContext($context, $local_context);
+							$replace .= $this->_render($content, $c);
 						}
 					} else if ($val) {
 						if (is_array($val) || is_object($val)) {
-							$replace .= $this->_render($content, $this->getContext($context, $val));
+							$c = $this->getContext($context, $val);
+							$replace .= $this->_render($content, $c);
 						} else {
 							$replace .= $content;
 						}
@@ -258,6 +281,74 @@ class Mustache {
 		}
 
 		return $template;
+	}
+
+	/**
+	 * Initialize pragmas and remove all pragma tags.
+	 *
+	 * @access protected
+	 * @param string $template
+	 * @param array &$context
+	 * @return string
+	 */
+	protected function renderPragmas($template, &$context) {
+		// no pragmas
+		if (strpos($template, $this->otag . '%') === false) {
+			return $template;
+		}
+
+		$otag = $this->prepareRegEx($this->otag);
+		$ctag = $this->prepareRegEx($this->ctag);
+		$regex = '/' . $otag . '%\\s*([\\w_-]+)((?: [\\w]+=[\\w]+)*)\\s*' . $ctag . '\\n?/';
+		return preg_replace_callback($regex, array($this, 'renderPragma'), $template);
+	}
+
+	/**
+	 * A preg_replace helper to remove {{%PRAGMA}} tags and enable requested pragma.
+	 *
+	 * @access protected
+	 * @param mixed $matches
+	 * @return void
+	 * @throws MustacheException unknown pragma
+	 */
+	protected function renderPragma($matches) {
+		$pragma         = $matches[0];
+		$pragma_name    = $matches[1];
+		$options_string = $matches[2];
+
+		if (!in_array($pragma_name, $this->pragmasImplemented)) {
+			throw new MustacheException('Unknown pragma: ' . $pragma_name, MustacheException::UNKNOWN_PRAGMA);
+		}
+
+		$options = array();
+		foreach (explode(' ', trim($options_string)) as $o) {
+			if ($p = trim($o)) {
+				$p = explode('=', trim($p));
+				$options[$p[0]] = $p[1];
+			}
+		}
+
+		if (empty($options)) {
+			$this->pragmas[$pragma_name] = true;
+		} else {
+			$this->pragmas[$pragma_name] = $options;
+		}
+
+		return '';
+	}
+
+	protected function hasPragma($pragma_name) {
+		if (array_key_exists($pragma_name, $this->pragmas) && $this->pragmas[$pragma_name]) {
+			return true;
+		}
+	}
+
+	protected function getPragmaOptions($pragma_name) {
+		if (!$this->hasPragma()) {
+			throw new MustacheException('Unknown pragma: ' . $pragma_name, MustacheException::UNKNOWN_PRAGMA);
+		}
+
+		return $this->pragmas[$pragma_name];
 	}
 
 	/**
@@ -273,8 +364,8 @@ class Mustache {
 			return $template;
 		}
 
-		$otag  = $this->prepareRegEx($this->otag);
-		$ctag  = $this->prepareRegEx($this->ctag);
+		$otag = $this->prepareRegEx($this->otag);
+		$ctag = $this->prepareRegEx($this->ctag);
 		$this->tagRegEx = '/' . $otag . "(#|\/|=|!|>|\\{|&)?([^\/#]+?)\\1?" . $ctag . "+/";
 		$html = '';
 		$matches = array();
@@ -332,11 +423,19 @@ class Mustache {
 				break;
 			case '{':
 			case '&':
-				return $this->renderUnescaped($tag_name, $context);
+				if ($this->hasPragma(self::PRAGMA_UNESCAPED)) {
+					return $this->renderEscaped($tag_name, $context);
+				} else {
+					return $this->renderUnescaped($tag_name, $context);
+				}
 				break;
 			case '':
 			default:
-				return $this->renderEscaped($tag_name, $context);
+				if ($this->hasPragma(self::PRAGMA_UNESCAPED)) {
+					return $this->renderUnescaped($tag_name, $context);
+				} else {
+					return $this->renderEscaped($tag_name, $context);
+				}
 				break;
 		}
 	}
@@ -448,6 +547,33 @@ class Mustache {
 	 * @return string
 	 */
 	protected function getVariable($tag_name, &$context) {
+		if ($this->hasPragma(self::PRAGMA_DOT_NOTATION)) {
+			$chunks = explode('.', $tag_name);
+			$first = array_shift($chunks);
+
+			$ret = $this->_getVariable($first, $context);
+			while ($next = array_shift($chunks)) {
+				// Slice off a chunk of context for dot notation traversal.
+				$c = array($ret);
+				$ret = $this->_getVariable($next, $c);
+			}
+			return $ret;
+		} else {
+			return $this->_getVariable($tag_name, $context);
+		}
+	}
+
+	/**
+	 * Get a variable from the context array. Internal helper used by getVariable() to abstract
+	 * variable traversal for dot notation.
+	 *
+	 * @access protected
+	 * @param string $tag_name
+	 * @param array &$context
+	 * @throws MustacheException Unknown variable name.
+	 * @return string
+	 */
+	protected function _getVariable($tag_name, &$context) {
 		foreach ($context as $view) {
 			if (is_object($view)) {
 				if (isset($view->$tag_name)) {
@@ -548,5 +674,9 @@ class MustacheException extends Exception {
 	// An UNKNOWN_PARTIAL exception is thrown whenever a {{>partial}} tag appears
 	// with no associated partial.
 	const UNKNOWN_PARTIAL          = 3;
+
+	// An UNKNOWN_PRAGMA exception is thrown whenever a {{%PRAGMA}} tag appears
+	// which can't be handled by this Mustache instance.
+	const UNKNOWN_PRAGMA           = 4;
 
 }
