@@ -580,6 +580,20 @@ class Mustache {
 		);
 		return strtr($str, $replace);
 	}
+
+	/**
+	 * A magic accessor.
+	 *
+	 * This method allows access to mustache variables just like accessing public member variables
+	 * on a class.
+	 *
+	 * @access public
+	 * @param mixed $name
+	 * @return void
+	 */
+	public function __get($name) {
+		return $this->_getVariable($name, $this->_context);
+	}
 }
 
 

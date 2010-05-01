@@ -209,4 +209,13 @@ class MustacheTest extends PHPUnit_Framework_TestCase {
 		}
 		return $ret;
 	}
+
+	public function testMagicGetter() {
+		$m = new Mustache('', array('foo' => 'one', 'bar' => 'two', 'baz' => 'three'));
+
+		$this->assertEquals('one',   $m->foo);
+		$this->assertEquals('two',   $m->bar);
+		$this->assertEquals('three', $m->baz);
+
+	}
 }
