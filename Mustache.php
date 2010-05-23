@@ -554,12 +554,12 @@ class Mustache {
 	protected function _findVariableInContext($tag_name, &$context) {
 		foreach ($context as $view) {
 			if (is_object($view)) {
-				if (isset($view->$tag_name)) {
+				if (in_array($tag_name, array_keys(get_class_vars(get_class($view))))) {
 					return $view->$tag_name;
 				} else if (method_exists($view, $tag_name)) {
 					return $view->$tag_name();
 				}
-			} else if (isset($view[$tag_name])) {
+			} else if (array_key_exists($tag_name, $view)) {
 				return $view[$tag_name];
 			}
 		}
@@ -632,6 +632,21 @@ class Mustache {
 	 */
 	public function __get($name) {
 		return $this->_getVariable($name, $this->_context);
+	}
+
+	public function __isset($name) {
+		if (substr($name, 0, 1) == '_') {
+			return false;
+		} else {
+			$class_name = get_class($this);
+			if (in_array($name, array_keys(get_class_vars($class_name)))) {
+				return true;
+			} else if (in_array($name, get_class_methods($class_name))) {
+				return true;
+			} else {
+				return false;
+			}
+		}
 	}
 }
 
