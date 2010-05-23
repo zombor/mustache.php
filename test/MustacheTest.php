@@ -167,6 +167,31 @@ class MustacheTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($first, $second);
 	}
 
+	public function testIsset() {
+		$m = new Mustache('', array('foo' => null, 'bar' => false, 'baz' => 2));
+
+		$this->assertFalse(isset($m->foo));
+		$this->assertTrue(isset($m->bar));
+		$this->assertTrue(isset($m->baz));
+		$this->assertFalse(isset($m->qux));
+
+		$view = new StdClass();
+		$view->foo = false;
+		$view->bar = true;
+
+		$m2 = new Mustache('', $view);
+		$this->assertTrue(isset($m2->foo));
+		$this->assertTrue(isset($m2->bar));
+		$this->assertFalse(isset($m2->baz));
+
+		unset($view->foo);
+		unset($view->bar);
+
+		$m3 = new Mustache('', $view);
+		$this->assertFalse(isset($m3->foo));
+		$this->assertFalse(isset($m3->bar));
+	}
+
 	/**
 	 * Test everything in the `examples` directory.
 	 *

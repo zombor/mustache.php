@@ -554,9 +554,17 @@ class Mustache {
 	protected function _findVariableInContext($tag_name, &$context) {
 		foreach ($context as $view) {
 			if (is_object($view)) {
-				if (in_array($tag_name, array_keys(get_class_vars(get_class($view))))) {
-					return $view->$tag_name;
-				} else if (method_exists($view, $tag_name)) {
+				if ($view instanceof Mustache) {
+					if (in_array($tag_name, array_keys(get_class_vars(get_class($view))))) {
+						return $view->$tag_name;
+					}
+				} else {
+					if (isset($view->$tag_name)) {
+						return $view->$tag_name;
+					}
+				}
+
+				if (method_exists($view, $tag_name)) {
 					return $view->$tag_name();
 				}
 			} else if (array_key_exists($tag_name, $view)) {
@@ -567,7 +575,7 @@ class Mustache {
 		if ($this->_throwsException(MustacheException::UNKNOWN_VARIABLE)) {
 			throw new MustacheException("Unknown variable: " . $tag_name, MustacheException::UNKNOWN_VARIABLE);
 		} else {
-			return '';
+			return null;
 		}
 	}
 
@@ -589,7 +597,7 @@ class Mustache {
 		if ($this->_throwsException(MustacheException::UNKNOWN_PARTIAL)) {
 			throw new MustacheException('Unknown partial: ' . $tag_name, MustacheException::UNKNOWN_PARTIAL);
 		} else {
-			return '';
+			return null;
 		}
 	}
 
@@ -627,26 +635,31 @@ class Mustache {
 	 * on a class.
 	 *
 	 * @access public
-	 * @param mixed $name
-	 * @return void
+	 * @param string $name
+	 * @return mixed
 	 */
 	public function __get($name) {
 		return $this->_getVariable($name, $this->_context);
 	}
 
+	/**
+	 * Magic isset method.
+	 *
+	 * This method should return true if the variable name exists anywhere in the context stack.
+	 *
+	 * @access public
+	 * @param string $name
+	 * @return bool
+	 */
 	public function __isset($name) {
-		if (substr($name, 0, 1) == '_') {
-			return false;
-		} else {
-			$class_name = get_class($this);
-			if (in_array($name, array_keys(get_class_vars($class_name)))) {
-				return true;
-			} else if (in_array($name, get_class_methods($class_name))) {
-				return true;
-			} else {
-				return false;
+		try {
+			return ($this->_getVariable($name, $this->_context) !== null);
+		} catch (MustacheException $e) {
+			if ($e->getCode() != MustacheException::UNKNOWN_VARIABLE) {
+				throw $e;
 			}
 		}
+		return false;
 	}
 }
 
