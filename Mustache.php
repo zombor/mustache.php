@@ -17,8 +17,6 @@ class Mustache {
 	public $_otag = '{{';
 	public $_ctag = '}}';
 
-	protected $enableElse = true;
-
 	/**
 	 * Should this Mustache throw exceptions when it finds unexpected tags?
 	 *
@@ -49,6 +47,12 @@ class Mustache {
 	 */
 	const PRAGMA_UNESCAPED    = 'UNESCAPED';
 
+	/**
+	 * The {{%ELSE}} pragma adds a third section tag -- {{:section}} -- which is equivalent to
+	 * {{/section}}{{^section}}, allowing if/else/endif and foreach/foreachelse section logic.
+	 */
+	const PRAGMA_ELSE         = 'ELSE';
+
 	protected $_tagRegEx;
 
 	protected $_template = '';
@@ -58,7 +62,8 @@ class Mustache {
 
 	protected $_pragmasImplemented = array(
 		self::PRAGMA_DOT_NOTATION,
-		self::PRAGMA_UNESCAPED
+		self::PRAGMA_UNESCAPED,
+		self::PRAGMA_ELSE,
 	);
 
 	/**
@@ -148,8 +153,9 @@ class Mustache {
 		$otag  = $this->_prepareRegEx($this->_otag);
 		$ctag  = $this->_prepareRegEx($this->_ctag);
 
+
 		$regex = '/' . $otag . '(\\^|\\#)\\s*(.+?)\\s*' . $ctag . '\\s*([\\s\\S]+?)';
-		if ($this->enableElse) {
+		if ($this->_hasPragma(self::PRAGMA_ELSE)) {
 			$regex .= '(?:\\s*' . $otag . '\:\\s*\\2\\s*' . $ctag . '\\s*([\\s\\S]+?)\\s*)?';
 		}
 		$regex .= $otag . '\\/\\s*\\2\\s*' . $ctag . '\\s*/m';
@@ -163,7 +169,7 @@ class Mustache {
 			$tag_name = trim($matches[2][0]);
 			$content  = $matches[3][0];
 			
-			if ($this->enableElse && isset($matches[4])) {
+			if ($this->_hasPragma(self::PRAGMA_ELSE) && isset($matches[4])) {
 				$else_section = $matches[4][0];
 			} else {
 				$else_section = false;
