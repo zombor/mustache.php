@@ -189,20 +189,22 @@ class Mustache {
 
 				// regular section
 				case '#':
-					if ($this->_varIsIterable($val)) {
-						foreach ($val as $local_context) {
-							$c = $this->_getContext($context, $local_context);
-							$replace .= $this->_renderTemplate($content, $c);
-						}
-					} else if ($val) {
-						if (is_array($val) || is_object($val)) {
-							$c = $this->_getContext($context, $val);
-							$replace .= $this->_renderTemplate($content, $c);
-						} else {
-							$replace .= $content;
-						}
-					} else if ($else_section !== false) {
+					if ($else_section !== false && empty($val)) {
 						$replace .= $else_section;
+					} else {
+						if ($this->_varIsIterable($val)) {
+							foreach ($val as $local_context) {
+								$c = $this->_getContext($context, $local_context);
+								$replace .= $this->_renderTemplate($content, $c);
+							}
+						} else if ($val) {
+							if (is_array($val) || is_object($val)) {
+								$c = $this->_getContext($context, $val);
+								$replace .= $this->_renderTemplate($content, $c);
+							} else {
+								$replace .= $content;
+							}
+						}
 					}
 					break;
 			}
