@@ -99,6 +99,7 @@ class Mustache {
 			$this->_context = array($this);
 		}
 
+		$template = $this->_renderPragmas($template, $context);
 		return $this->_renderTemplate($template, $this->_context);
 	}
 
@@ -128,7 +129,6 @@ class Mustache {
 	 * @return string Rendered Mustache template.
 	 */
 	protected function _renderTemplate($template, &$context) {
-		$template = $this->_renderPragmas($template, $context);
 		$template = $this->_renderSection($template, $context);
 		return $this->_renderTags($template, $context);
 	}
@@ -144,7 +144,7 @@ class Mustache {
 	protected function _renderSection($template, &$context) {
 		$otag  = $this->_prepareRegEx($this->_otag);
 		$ctag  = $this->_prepareRegEx($this->_ctag);
-		$regex = '/' . $otag . '(\\^|\\#)(.+?)' . $ctag . '\\s*([\\s\\S]+?)' . $otag . '\\/\\2' . $ctag . '\\s*/m';
+		$regex = '/' . $otag . '(\\^|\\#)\\s*(.+?)\\s*' . $ctag . '\\s*([\\s\\S]+?)' . $otag . '\\/\\s*\\2\\s*' . $ctag . '\\s*/m';
 
 		$matches = array();
 		while (preg_match($regex, $template, $matches, PREG_OFFSET_CAPTURE)) {
@@ -424,7 +424,7 @@ class Mustache {
 	 * @return string
 	 */
 	protected function _renderPartial($tag_name, &$context) {
-		$view = new self($this->_getPartial($tag_name), $context, $this->_partials);
+		$view = new self($this->_getPartial($tag_name), $this->_flattenContext($context), $this->_partials);
 		$view->_otag = $this->_otag;
 		$view->_ctag = $this->_ctag;
 		return $view->render();
@@ -458,8 +458,8 @@ class Mustache {
 	 *
 	 * @access protected
 	 * @param array $context
-	 * @param mixed $local_context
-	 * @return void
+	 * @param array $local_context
+	 * @return array
 	 */
 	protected function _getContext(&$context, &$local_context) {
 		$ret = array();
@@ -467,6 +467,45 @@ class Mustache {
 		foreach ($context as $view) {
 			$ret[] =& $view;
 		}
+		return $ret;
+	}
+
+
+	/**
+	 * Prepare a new (flattened) context.
+	 *
+	 * This is used to create a view object or array for rendering partials.
+	 *
+	 * @access protected
+	 * @param array &$context
+	 * @return array
+	 * @throws MustacheException
+	 */
+	protected function _flattenContext(&$context) {
+		$keys = array_keys($context);
+		$first = $context[$keys[0]];
+
+		if ($first instanceof Mustache) {
+			$ret = clone $first;
+			unset($keys[0]);
+
+			foreach ($keys as $name) {
+				foreach ($context[$name] as $key => $val) {
+					$ret->$key =& $val;
+				}
+			}
+		} else if (is_array($first)) {
+			$ret = array();
+
+			foreach ($keys as $name) {
+				foreach ($context[$name] as $key => $val) {
+					$ret[$key] =& $val;
+				}
+			}
+		} else {
+			throw new MustacheException('Unknown root context type.');
+		}
+
 		return $ret;
 	}
 
@@ -612,7 +651,7 @@ class MustacheException extends Exception {
 	const UNCLOSED_SECTION         = 1;
 
 	// An UNEXPECTED_CLOSE_SECTION exception is thrown when {{/section}} appears
-	// without a corresponding {{#section}}.
+	// without a corresponding {{#section}} or {{^section}}.
 	const UNEXPECTED_CLOSE_SECTION = 2;
 
 	// An UNKNOWN_PARTIAL exception is thrown whenever a {{>partial}} tag appears
