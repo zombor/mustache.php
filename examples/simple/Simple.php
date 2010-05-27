@@ -1,7 +1,7 @@
 <?php
 
 class Simple extends Mustache {
-	protected $templateBase = __DIR__;
+	protected $_templateBase = __DIR__;
 
 	public $name = "Chris";
 	public $value = 10000;

@@ -1,7 +1,7 @@
 <?php
 
 class Delimiters extends Mustache {
-	protected $templateBase = __DIR__;
+	protected $_templateBase = __DIR__;
 
 	public $start = "It worked the first time.";
 

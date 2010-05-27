@@ -1,7 +1,7 @@
 <?php
 
 class ChildContext extends Mustache {
-	protected $templateBase = __DIR__;
+	protected $_templateBase = __DIR__;
 
 	public $parent = array(
 		'child' => 'child works',
