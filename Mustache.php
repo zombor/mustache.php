@@ -49,7 +49,7 @@ class Mustache {
 
 	protected $_tagRegEx;
 
-	protected $_template = '';
+	protected $_template = null;
 	protected $_context  = array();
 	protected $_partials = array();
 	protected $_pragmas  = array();
@@ -72,7 +72,7 @@ class Mustache {
 	 * @var string
 	 * @access protected
 	 */
-	protected $templateBase;
+	protected $_templateBase;
 
 	/**
 	 * templateName.
@@ -82,7 +82,7 @@ class Mustache {
 	 * @var string
 	 * @access protected
 	 */
-	protected $templateName;
+	protected $_templateName;
 
 	/**
 	 * File extension used to generate automatic template filenames.
@@ -92,7 +92,7 @@ class Mustache {
 	 * @var string
 	 * @access protected
 	 */
-	protected $templateExtension = 'mustache';
+	protected $_templateExtension = 'mustache';
 
 	/**
 	 * Mustache class constructor.
@@ -112,28 +112,14 @@ class Mustache {
 		if ($view !== null)     $this->_context = array($view);
 
 		// default template base is the current directory.
-		if (isset($this->templateBase)) {
-			$this->setTemplateBase($this->templateBase);
+		if (isset($this->_templateBase)) {
+			$this->_setTemplateBase($this->_templateBase);
 		}
 
 		// default template name is the underscorified class name.
-		if (!isset($this->templateName)) {
-			$this->templateName = strtolower(preg_replace('#(?<=[a-z0-9])([A-Z])#', '_\1', get_class($this)));
+		if (!isset($this->_templateName)) {
+			$this->_templateName = strtolower(preg_replace('#(?<=[a-z0-9])([A-Z])#', '_\1', get_class($this)));
 		}
-	}
-
-	/**
-	 * Override the current templateBase.
-	 *
-	 * @access public
-	 * @param string $dir
-	 * @return void
-	 */
-	public function setTemplateBase($dir) {
-		if (substr($dir, -1) !== '/') {
-			$dir .= '/';
-		}
-		$this->templateBase = $dir;
 	}
 
 	/**
@@ -159,34 +145,48 @@ class Mustache {
 	}
 
 	/**
+	 * Override the current templateBase.
+	 *
+	 * @access public
+	 * @param string $dir
+	 * @return void
+	 */
+	public function _setTemplateBase($dir) {
+		if (substr($dir, -1) !== '/') {
+			$dir .= '/';
+		}
+		$this->_templateBase = $dir;
+	}
+
+	/**
 	 * Override the default templateName.
 	 *
 	 * @access public
 	 * @param string $name
 	 * @return void
 	 */
-	public function setTemplateName($name) {
-		$this->templateName = $name;
+	public function _setTemplateName($name) {
+		$this->_templateName = $name;
 	}
 
 	/**
-	 * Load a template file. This file will be relative to $this->templateBase.
+	 * Load a template file. This file will be relative to $this->_templateBase.
 	 * A '.mustache' file extension is assumed if none is provided in $file.
 	 *
 	 * @access public
 	 * @param string $name
 	 * @return void
 	 */
-	public function loadTemplate($name) {
+	public function _loadTemplate($name) {
 		if (strpos($name, '.') === false) {
-			$name .= '.' . $this->templateExtension;
+			$name .= '.' . $this->_templateExtension;
 		}
 
-		$filename = $this->templateBase . $name;
+		$filename = $this->_templateBase . $name;
 		if (file_exists($filename)) {
-			$this->template = file_get_contents($filename);
+			$this->_template = file_get_contents($filename);
 		} else {
-			$this->template = null;
+			$this->_template = null;
 		}
 	}
 
@@ -208,7 +208,7 @@ class Mustache {
 		// Autoload template if none is explicitly set.
 		if ($template === null) {
 			if (!isset($this->_template)) {
-				$this->loadTemplate($this->templateName);
+				$this->_loadTemplate($this->_templateName);
 			}
 			$template = $this->_template;
 		}
@@ -677,7 +677,7 @@ class Mustache {
 		}
 
 		// If no partial is explictly set, search for an appropriately named partial template file.
-		$filename = $this->templateBase . $tag_name . '.' . $this->templateExtension;
+		$filename = $this->_templateBase . $tag_name . '.' . $this->_templateExtension;
 		if (file_exists($filename)) {
 			$this->_partials[$tag_name] = file_get_contents($filename);
 			return $this->_partials[$tag_name];
