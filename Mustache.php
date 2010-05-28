@@ -67,7 +67,7 @@ class Mustache {
 	 * This must be specified in extending classes for the template autoloader to work. I'd suggest
 	 * something like:
 	 *
-	 *     protected $templateBase = __DIR__;
+	 *     protected $_templateBase = __DIR__;
 	 *
 	 * @var string
 	 * @access protected
