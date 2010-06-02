@@ -167,6 +167,46 @@ class MustacheTest extends PHPUnit_Framework_TestCase {
 		$this->assertEquals($first, $second);
 	}
 
+
+	/**
+	 * Mustache should not use templates passed to the render() method for subsequent invocations.
+	 * 
+	 * @access public
+	 * @return void
+	 */
+	public function testResetTemplateForMultipleInvocations() {
+		$m = new Mustache('Sirve.');
+		$m->render('No sirve.');
+		$this->assertEquals('Sirve.', $m->render());
+		
+		$m2 = new Mustache();
+		$m2->render('No sirve.');
+		$this->assertEquals('', $m2->render());
+	}
+
+	/**
+	 * testClone function.
+	 *
+	 * @dataProvider getExamples
+	 * @access public
+	 * @return void
+	 */
+	public function test__clone($class, $template, $output) {
+		$m = new $class;
+		$n = clone $m;
+
+		$n_output = $n->render($template);
+
+		$o = clone $n;
+
+		$this->assertEquals($m->render($template), $n_output);
+		$this->assertEquals($n_output, $o->render($template));
+
+		$this->assertNotSame($m, $n);
+		$this->assertNotSame($n, $o);
+		$this->assertNotSame($m, $o);
+	}
+
 	/**
 	 * Test everything in the `examples` directory.
 	 *
