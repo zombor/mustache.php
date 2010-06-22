@@ -1,8 +1,6 @@
 <?php
 
 class Partials extends Mustache {
-	protected $_templateBase = __DIR__;
-
 	public $name = 'ilmich';
 	public $data = array(
 		array('name' => 'federica', 'age' => 27, 'gender' => 'female'),

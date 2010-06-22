@@ -1,8 +1,6 @@
 <?php
 
 class Sections extends Mustache {
-	protected $_templateBase = __DIR__;
-
 	public $start = "It worked the first time.";
 
 	public function middle() {

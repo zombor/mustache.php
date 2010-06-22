@@ -1,8 +1,6 @@
 <?php
 
 class RecursivePartials extends Mustache {
-	protected $_templateBase = __DIR__;
-
 	protected $_partials = array(
 		'child' => " > {{ name }}{{#child}}{{>child}}{{/child}}",
 	);

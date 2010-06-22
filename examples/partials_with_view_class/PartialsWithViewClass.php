@@ -1,8 +1,6 @@
 <?php
 
 class PartialsWithViewClass extends Mustache {
-	protected $_templateBase = __DIR__;
-
 	public function __construct($template = null, $view = null, $partials = null) {
 		// Use an object of an arbitrary class as a View for this Mustache instance:
 		$view = new StdClass();

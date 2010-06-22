@@ -112,9 +112,7 @@ class Mustache {
 		if ($view !== null)     $this->_context = array($view);
 
 		// default template base is the current directory.
-		if (isset($this->_templateBase)) {
-			$this->_setTemplateBase($this->_templateBase);
-		}
+		$this->_setTemplateBase($this->_templateBase);
 
 		// default template name is the underscorified class name.
 		if (!isset($this->_templateName)) {
@@ -151,7 +149,12 @@ class Mustache {
 	 * @param string $dir
 	 * @return void
 	 */
-	public function _setTemplateBase($dir) {
+	public function _setTemplateBase($dir = null) {
+		if ($dir == null) {
+			$ref = new ReflectionClass(get_class($this));
+			$dir = dirname($ref->getFileName());
+		}
+
 		if (substr($dir, -1) !== '/') {
 			$dir .= '/';
 		}

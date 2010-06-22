@@ -6,8 +6,6 @@
  * @extends Mustache
  */
 class DotNotation extends Mustache {
-	protected $_templateBase = __DIR__;
-
 	public $person = array(
 		'name' => array('first' => 'Chris', 'last' => 'Firescythe'),
 		'age' => 24,

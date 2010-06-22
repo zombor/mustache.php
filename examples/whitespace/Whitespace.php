@@ -11,8 +11,6 @@
  * @extends Mustache
  */
 class Whitespace extends Mustache {
-	protected $_templateBase = __DIR__;
-
 	public $foo = 'alpha';
 
 	public $bar = 'beta';
