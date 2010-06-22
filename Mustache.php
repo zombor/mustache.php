@@ -262,8 +262,8 @@ class Mustache {
 	 * @return string
 	 */
 	protected function _renderSection($template) {
-		$otag  = $this->_prepareRegEx($this->_otag);
-		$ctag  = $this->_prepareRegEx($this->_ctag);
+		$otag  = preg_quote($this->_otag, '/');
+		$ctag  = preg_quote($this->_ctag, '/');
 		$regex = '/' . $otag . '(\\^|\\#)\\s*(.+?)\\s*' . $ctag . '\\s*([\\s\\S]+?)' . $otag . '\\/\\s*\\2\\s*' . $ctag . '\\s*/m';
 
 		$matches = array();
@@ -325,8 +325,8 @@ class Mustache {
 			return $template;
 		}
 
-		$otag = $this->_prepareRegEx($this->_otag);
-		$ctag = $this->_prepareRegEx($this->_ctag);
+		$otag = preg_quote($this->_otag, '/');
+		$ctag = preg_quote($this->_ctag, '/');
 		$regex = '/' . $otag . '%\\s*([\\w_-]+)((?: [\\w]+=[\\w]+)*)\\s*' . $ctag . '\\n?/';
 		return preg_replace_callback($regex, array($this, '_renderPragma'), $template);
 	}
@@ -422,8 +422,11 @@ class Mustache {
 			return $template;
 		}
 
-		$otag = $this->_prepareRegEx($this->_otag);
-		$ctag = $this->_prepareRegEx($this->_ctag);
+		$otag_orig = $this->_otag;
+		$ctag_orig = $this->_ctag;
+
+		$otag = preg_quote($this->_otag, '/');
+		$ctag = preg_quote($this->_ctag, '/');
 
 		$this->_tagRegEx = '/' . $otag . "([#\^\/=!>\\{&])?(.+?)\\1?" . $ctag . "+/";
 
@@ -439,6 +442,9 @@ class Mustache {
 			$html .= $this->_renderTag($modifier, $tag_name);
 			$template = substr($template, $offset + strlen($tag));
 		}
+
+		$this->_otag = $otag_orig;
+		$this->_ctag = $ctag_orig;
 
 		return $html . $template;
 	}
@@ -558,8 +564,8 @@ class Mustache {
 		$this->_otag = $tags[0];
 		$this->_ctag = $tags[1];
 
-		$otag  = $this->_prepareRegEx($this->_otag);
-		$ctag  = $this->_prepareRegEx($this->_ctag);
+		$otag  = preg_quote($this->_otag, '/');
+		$ctag  = preg_quote($this->_ctag, '/');
 		$this->_tagRegEx = '/' . $otag . "([#\^\/=!>\\{&])?(.+?)\\1?" . $ctag . "+/";
 		return '';
 	}
@@ -699,22 +705,6 @@ class Mustache {
 	 */
 	protected function _varIsIterable($var) {
 		return is_object($var) || (is_array($var) && !array_diff_key($var, array_keys(array_keys($var))));
-	}
-
-	/**
-	 * Prepare a string to be used in a regular expression.
-	 *
-	 * @access protected
-	 * @param string $str
-	 * @return string
-	 */
-	protected function _prepareRegEx($str) {
-		$replace = array(
-			'\\' => '\\\\', '^' => '\^', '.' => '\.', '$' => '\$', '|' => '\|', '(' => '\(',
-			')' => '\)', '[' => '\[', ']' => '\]', '*' => '\*', '+' => '\+', '?' => '\?',
-			'{' => '\{', '}' => '\}', ',' => '\,'
-		);
-		return strtr($str, $replace);
 	}
 }
 
