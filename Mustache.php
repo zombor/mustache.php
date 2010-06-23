@@ -61,6 +61,8 @@ class Mustache {
 
 	protected $_localPragmas;
 
+	protected static $_classCache = array();
+
 	/**
 	 * Mustache class constructor.
 	 *
@@ -550,9 +552,33 @@ class Mustache {
 	protected function _findVariableInContext($tag_name, $context) {
 		foreach ($context as $view) {
 			if (is_object($view)) {
-				if (isset($view->$tag_name)) {
+				$class = get_class($view);
+				if (!isset(self::$_classCache[$class])) {
+					self::$_classCache[$class] = array('properties' => array(), 'methods' => array());
+					$r = new ReflectionClass($class);
+
+					foreach ($r->getMethods(ReflectionMethod::IS_PUBLIC) as $m) {
+						self::$_classCache[$class]['methods'][$m->getName()] = true;
+					}
+					foreach ($r->getProperties(ReflectionProperty::IS_PUBLIC) as $p) {
+						self::$_classCache[$class]['properties'][$p->getName()] = true;
+					}
+				}
+
+				if (isset(self::$_classCache[$class]['properties'][$tag_name])) {
+					// return public properties
 					return $view->$tag_name;
-				} else if (method_exists($view, $tag_name)) {
+				} else if (property_exists($view, $tag_name) && isset($view->$tag_name)) {
+					// check properties added at runtime
+					return $view->$tag_name;
+				} else if (isset(self::$_classCache[$class]['methods']['__isset']) && isset($view->$tag_name)) {
+					// give __isset magic methods a shot
+					return $view->$tag_name;
+				} else if (isset(self::$_classCache[$class]['methods'][$tag_name])) {
+					// call all explicit methods
+					return call_user_func(array($view, $tag_name));
+				} else if (isset(self::$_classCache[$class]['methods']['__call'])) {
+					// give __call magic methods the benefit of the doubt
 					return $view->$tag_name();
 				}
 			} else if (isset($view[$tag_name])) {
