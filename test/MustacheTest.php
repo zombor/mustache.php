@@ -263,7 +263,7 @@ class MustacheTest extends PHPUnit_Framework_TestCase {
 				foreach ($children as $file) {
 					if (!$file->isFile()) continue;
 
-					$filename = $file->getPathInfo();
+					$filename = (string) $file;
 					$info = pathinfo($filename);
 
 					switch($info['extension']) {
