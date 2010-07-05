@@ -64,10 +64,14 @@ class Mustache {
 	/**
 	 * templateBase directory.
 	 *
-	 * This must be specified in extending classes for the template autoloader to work. I'd suggest
-	 * something like:
+	 * If this variable is not set, the template autoloader will assume that mustache templates
+	 * are located in the same directory as the class file, i.e. equivalent to:
 	 *
 	 *     protected $_templateBase = __DIR__;
+	 *
+	 * or, in < 5.3,
+	 *
+	 *     protected $_templateBase = dirname(__FILE__);
 	 *
 	 * @var string
 	 * @access protected
@@ -75,9 +79,11 @@ class Mustache {
 	protected $_templateBase;
 
 	/**
-	 * templateName.
+	 * Template file name.
 	 *
 	 * If none is specified, this will default to an underscorified version of the class name.
+	 * i.e. if your Mustache class is `FooBarBaz`, it will attempt to autoload a template named
+	 * `foo_bar_baz.mustache`.
 	 *
 	 * @var string
 	 * @access protected
