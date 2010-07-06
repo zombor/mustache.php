@@ -21,4 +21,9 @@ class Non_Iterable_Object
 	{
 		return isset($this->_data[$key]) ? $this->_data[$key] : NULL;
 	}
+
+	public function __isset($key)
+	{
+		return isset($this->_data[$key]);
+	}
 }
