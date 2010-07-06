@@ -189,6 +189,7 @@ class Mustache {
 				// regular section
 				case '#':
 					if ($this->_varIsIterable($val)) {
+//						echo var_dump('iterating on ').var_dump($val);
 						foreach ($val as $local_context) {
 							$this->_pushContext($local_context);
 							$replace .= $this->_renderTemplate($content);
@@ -597,7 +598,7 @@ class Mustache {
 	 * @return bool
 	 */
 	protected function _varIsIterable($var) {
-		return is_array($var) && !array_diff_key($var, array_keys(array_keys($var)));
+		return $var instanceof Traversable || (is_array($var) && !array_diff_key($var, array_keys(array_keys($var))));
 	}
 }
 
